@@ -8,7 +8,6 @@ async function start() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1')
   app.enableCors();
-  app.use(cors());
   await app.listen(PORT, () => {console.log(app.getUrl)});
 }
 start();
