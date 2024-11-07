@@ -3,16 +3,18 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
-import { User, UserDocument } from 'src/users/schema/users.schema';
+import { UserDocument } from 'src/users/schema/users.schema';
 import { FriendsService } from 'src/friends/friends.service';
 import { FriendDocument } from 'src/friends/schema/friends.schema';
+import { MailerService } from '@nestjs-modules/mailer';
 
 
 @Injectable()
 export class AuthService {
 
   constructor (private userService: UsersService, private friendsServise: FriendsService,
-    private jwtService: JwtService) {}
+    private jwtService: JwtService,
+    private readonly mailService: MailerService) {}
 
 
   async login(userDto: CreateUserDto) {
@@ -74,6 +76,30 @@ export class AuthService {
     };
   }
 
+  async forgot(userDto: CreateUserDto) {
+    const user: UserDocument = await this.userService.getUserByEmail(userDto.email);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    const password = await this.passwordGenerator();
+    console.log(password)
+
+    user.password = await bcrypt.hash(password, 5)
+    user.save()
+
+    const isSent = await this.sendMail(userDto.email, password);
+
+    if (!isSent) {
+      throw new HttpException('Error', HttpStatus.BAD_REQUEST);
+    }
+
+    return {
+      status: HttpStatus.OK,
+      password: password,
+      message: "The letter has been sent",
+    };
+  }
+
   async refreshToken(refreshToken: string) {
     if (!refreshToken) {
       throw new HttpException('Refresh token is missing', HttpStatus.BAD_REQUEST);
@@ -97,6 +123,39 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  private async sendMail(email: string, password: string) {
+    const message = `Here is your new password: ${password}\nYou can change it in your account settings`;
+
+    try {
+      const sent = await this.mailService.sendMail({
+        from: 'Users app',
+        to: email,
+        subject: `Reset password`,
+        text: message,
+      });
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
+  private async passwordGenerator() {
+    const lowerChars = "abcdefghijklmnopqrstuvwxyz";
+    const upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const specialChars = "0123456789";
+  
+    let password = upperChars[Math.floor(Math.random() * upperChars.length)] +
+                   specialChars[Math.floor(Math.random() * specialChars.length)];
+  
+    for (let i = password.length; i < 8; i++) {
+      password += lowerChars[Math.floor(Math.random() * lowerChars.length)];
+    }
+  
+    password = password.split('').sort(() => Math.random() - 0.5).join('');
+    
+    return password;
   }
 
   private async generateTokens(user: UserDocument) {

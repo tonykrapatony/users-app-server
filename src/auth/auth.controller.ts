@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('/login')
   login(@Body() userDto: CreateUserDto) {
@@ -14,10 +14,14 @@ export class AuthController {
   registration(@Body() userDto: CreateUserDto) {
     return this.authService.registration(userDto)
   }
+  @Post('/forgot')
+  forgot(@Body() userDto: CreateUserDto) {
+    return this.authService.forgot(userDto)
+  }
   @Post('/refresh')
-  refreshToken(@Body() body: { refreshToken: string } ) {
+  refreshToken(@Body() body: { refreshToken: string }) {
     const { refreshToken } = body
     return this.authService.refreshToken(refreshToken)
   }
-  
+
 }

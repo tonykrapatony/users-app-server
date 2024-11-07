@@ -8,6 +8,7 @@ import { CommentsModule } from './comments/comments.module';
 import { EventsModule } from './events/events.module';
 import { FriendsModule } from './friends/friends.module';
 import { AppController } from './app.controller';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
@@ -15,6 +16,16 @@ import { AppController } from './app.controller';
       envFilePath: '.env'
     }),
     MongooseModule.forRoot(process.env.MONGODB_URL),
+    MailerModule.forRoot({
+      transport: {
+        host: process.env.EMAIL_HOST,
+        
+        auth: {
+          user: process.env.EMAIL_USERNAME,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      }
+    }),
     UsersModule,
     AuthModule,
     ArticlesModule,
