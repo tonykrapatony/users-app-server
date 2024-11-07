@@ -82,10 +82,9 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     const password = await this.passwordGenerator();
-    console.log(password)
 
-    user.password = await bcrypt.hash(password, 5)
-    user.save()
+    user.password = await bcrypt.hash(password, 5);
+    user.save();
 
     const isSent = await this.sendMail(userDto.email, password);
 
@@ -95,7 +94,6 @@ export class AuthService {
 
     return {
       status: HttpStatus.OK,
-      password: password,
       message: "The letter has been sent",
     };
   }
@@ -129,7 +127,7 @@ export class AuthService {
     const message = `Here is your new password: ${password}\nYou can change it in your account settings`;
 
     try {
-      const sent = await this.mailService.sendMail({
+      await this.mailService.sendMail({
         from: 'Users app',
         to: email,
         subject: `Reset password`,
